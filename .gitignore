@@ -1,0 +1,37 @@
+values.py
+
+# Compiled source #
+build/
+python/
+__pycache__/
+.cache/
+.ipython/
+.jupyter/
+.local/
+
+# Project Files
+*.py[cod]
+*$py.class
+.ipynb*
+venv/
+.vscode
+*.egg-info/
+tmp/
+.coverage
+reports/
+joblib_cache/
+db/
+
+# OS generated files
+.DS_Store
+
+# IDEs
+.dir-locals.el
+.envrc
+
+# hypothesis testing
+.hypothesis/**
+*/.hypothesis/**
+
+# Pycharm IDE
+.idea/**/*
