@@ -1,10 +1,11 @@
 import logging
+from calendar import monthrange
 from datetime import datetime
 from typing import Callable
 
 import pandas as pd
-from calendar import monthrange
-from database import get_attendance_per_month
+
+from usc.database import get_attendance_per_month, get_sport_per_month
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,9 @@ def get_value_counts_for_frame(check_ins: pd.DataFrame) -> pd.DataFrame:
     return value_counts
 
 
-def format_rows_for_message(_format_row: Callable, check_ins_this_month: pd.DataFrame | pd.Series) -> tuple[str, pd.Series]:
+def format_checkins_rows_for_message(
+    _format_row: Callable, check_ins_this_month: pd.DataFrame | pd.Series
+) -> tuple[str, pd.Series]:
     check_ins_this_month.sort_values("count", ascending=False, inplace=True)
     rows = [
         _format_row(row["venue"], row["count"], row["checkin_limit"])
@@ -26,6 +29,11 @@ def format_rows_for_message(_format_row: Callable, check_ins_this_month: pd.Data
     rows = "\n".join(rows)
     totals = check_ins_this_month[["count", "cost"]].sum()
     return rows, totals
+
+
+def format_sports_for_msg(sports_this_month: pd.DataFrame) -> str:
+    sports_this_month = sports_this_month.to_dict()["count"]
+    return "\n".join([f"{sport:25s}{count}" for sport, count in sports_this_month.items()]).replace(" ", "-")
 
 
 def format_attendance_per_month_for_msg(year: int = None, month: int = None) -> str:
@@ -45,14 +53,19 @@ def format_attendance_per_month_for_msg(year: int = None, month: int = None) -> 
         days_remaining = None
 
     check_ins_this_month = get_attendance_per_month(year=year, month=month)
-    rows, totals = format_rows_for_message(_format_row, check_ins_this_month)
+    rows_checkins, totals_checkins = format_checkins_rows_for_message(_format_row, check_ins_this_month)
+    sports_this_month = format_sports_for_msg(get_sport_per_month(year=year, month=month))
     msg = f"""
 👀 Check ins {date_header} 👀
-💪🏾 Count: {int(totals["count"])}
-💰 Value: {totals["cost"]}€
+💪🏾 Count: {int(totals_checkins["count"])}
+💰 Value: {totals_checkins["cost"]}€
 {days_remaining if days_remaining else ""}
 
-```\n{rows}```
+Venues:
+```\n{rows_checkins}```
+
+Sports:
+```\n{sports_this_month}```
 """
     return msg
 
@@ -64,12 +77,17 @@ def get_total_check_ins_for_msg():
         return f"{_venue[:25]:25s}{_checkin_count:>4}".replace(" ", "-")
 
     checkins_value_counts = get_attendance_per_month()
-    rows, totals = format_rows_for_message(_format_row, checkins_value_counts)
+    rows_checkins, totals_checkins = format_checkins_rows_for_message(_format_row, checkins_value_counts)
+    sports_this_month = format_sports_for_msg(get_sport_per_month())
     msg = f"""
 ⭐ Check ins all time! ⭐ 
-💪🏾 Count: {int(totals["count"])}
-💰 Value: {totals["cost"]}€
-    
-```\n{rows}```
+💪🏾 Count: {int(totals_checkins["count"])}
+💰 Value: {totals_checkins["cost"]}€
+
+Venues:
+```\n{rows_checkins}```
+
+Sports:
+```\n{sports_this_month}```
 """
     return msg

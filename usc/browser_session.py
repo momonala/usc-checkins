@@ -35,7 +35,7 @@ def browser_session():
         browser = webdriver.Firefox(service=webdriver_service, options=webdriver_options)
         logger.info("Using Firefox webdriver.")
     else:
-        webdriver_service = ChromeService(executable_path=ChromeDriverManager().install())
+        webdriver_service = ChromeService(executable_path=ChromeDriverManager(driver_version='114.0.5735.90').install())
         webdriver_options = webdriver.ChromeOptions()
         webdriver_options.add_argument('--headless=new')
         webdriver_options.page_load_strategy = 'eager'

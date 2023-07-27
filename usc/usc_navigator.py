@@ -11,8 +11,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
-from cached_requests import get_venue_html
-from values import email, password
+from usc.cached_requests import get_venue_html
+from usc.values import email, password
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class USCNavigator:
             return datetime(day=checkin.day, month=checkin.month, year=checkin.year).strftime("%d %B, %Y")
 
         start_end = check_ins_df.iloc[[0, -1]].apply(lambda r: get_date(r), axis=1).values
-        logger.info(f"Got data from: {start_end[1]} - {start_end[0]}.\nSize:{check_ins_df.shape}")
+        logger.info(f"Got data from: {start_end[1]} - {start_end[0]}. Size:{check_ins_df.shape}")
 
     def login(self):
         usc_login_page = f"{self.usc_url_base}/en/login"

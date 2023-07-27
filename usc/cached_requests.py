@@ -1,7 +1,7 @@
 import requests
 from joblib import Memory
 
-from values import email
+from usc.values import email
 
 disk_memory = Memory("joblib_cache")
 

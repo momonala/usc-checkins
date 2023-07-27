@@ -83,12 +83,39 @@ def get_attendance_per_month(year: int = None, month: int = None) -> pd.DataFram
     assert not month or month <= 12
     with Session(create_engine(db_url())) as session:
         query = session.query(Checkin, func.count(Checkin.venue).label("count"))
-        if year:
-            query = query.filter(Checkin.year == year)
-        if month:
-            query = query.filter(Checkin.month == month)
+        query = _filter_by_date(query, month, year)
         query = query.group_by(Checkin.venue)
         df = pd.read_sql(query.statement, query.session.bind)
 
     df["cost"] = df["cost"] * df["count"]
     return df
+
+
+def get_sport_per_month(year: int = None, month: int = None) -> pd.DataFrame:
+    """Returns a dataframe with the sport counts for the given year and month.
+    If no year or month is given, then the cumulative returned.
+    """
+    assert not year or year >= 2018
+    assert not month or month <= 12
+    with Session(create_engine(db_url())) as session:
+        query = session.query(Checkin.sport, func.count(Checkin.sport).label("count"))
+        query = _filter_by_date(query, month, year)
+        query = query.group_by(Checkin.sport)
+        df = pd.read_sql(query.statement, query.session.bind)
+
+    df["sport"].replace({"Bouldern": "Bouldering", "bouldern": "Bouldering"}, inplace=True)
+    df = df.groupby("sport").sum().sort_values("count", ascending=False)
+
+    return df
+
+
+def _filter_by_date(query: sqlalchemy.orm.query.Query, month: int | None, year: int | None) -> sqlalchemy.orm.query.Query:
+    if year:
+        query = query.filter(Checkin.year == year)
+    if month:
+        query = query.filter(Checkin.month == month)
+    return query
+
+
+if __name__ == "__main__":
+    create_pg_tables_if_needed(db_url())
