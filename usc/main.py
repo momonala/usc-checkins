@@ -14,18 +14,18 @@ from usc.usc_navigator import USCNavigator
 logger = logging.getLogger(__name__)
 
 
-def monthly_checkin_pipeline():
+def monthly_checkin_pipeline(pages=1):
     t0 = time()
     with virtual_display_if_needed(), browser_session() as browser:
         usc = USCNavigator(browser)
         usc.login()
-        usc.get_check_ins(pages=1)
+        usc.get_check_ins(pages=pages)
         checkins = usc.extract_check_ins()
     write_checkins_to_db(checkins)
     msg = format_attendance_per_month_for_msg()
     logger.info(f"Elapsed time: {round(time() - t0, 2)}s")
     print(msg)
-    # send_to_telegram(msg)
+    send_to_telegram(msg)
 
 
 def total_checkin_pipeline():
