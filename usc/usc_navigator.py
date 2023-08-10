@@ -126,7 +126,12 @@ class USCNavigator:
                 venue_html = get_venue_html(f"{self.usc_url_base}{venue_uri}")
                 visit_limit_option1 = self._find_between("M-.*Mitglieder können ", "besuchen", venue_html)
                 visit_limit_option2 = self._find_between("M-.*Mitglieder können ", "teilnehmen", venue_html)
-                visit_limit_raw = visit_limit_option1 or visit_limit_option2
+                visit_limit_option3 = self._find_between("M-.*Mitglieder können ", "nutzen", venue_html)
+                visit_limit_option4 = self._find_between("M-.*Mitglieder können ", "bouldern", venue_html)
+                visit_limit_option5 = self._find_between("M-.*Mitglieder können ", "wahrnehmen", venue_html)
+                visit_limit_option6 = self._find_between("M-.*Mitglieder können ", "bouldern", venue_html)
+                visit_limit_option3 = self._find_between("M-.*Mitglieder können ", "spielen", venue_html)
+                visit_limit_raw = visit_limit_option1 or visit_limit_option2 or visit_limit_option3
                 if not visit_limit_raw:
                     logger.warning(f"Could not find visit limit for {venue_uri=}")
                     checkin_limit = 31
