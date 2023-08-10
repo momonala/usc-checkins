@@ -1,6 +1,7 @@
 import logging
 import re
 from datetime import datetime
+from functools import lru_cache
 from time import sleep
 
 import numpy as np
@@ -56,6 +57,7 @@ class USCNavigator:
         customer_id_xpath = '//*[@id="appointment"]/header/div/ul[2]/li[2]'
 
         self._browser.get(usc_login_page)
+        sleep(1)
         self._browser.find_element(By.ID, email_html_id).send_keys(email)
         self._browser.find_element(By.ID, pass_html_id).send_keys(password)
         self._browser.find_element(By.XPATH, signin_button_xpath).click()
@@ -124,25 +126,13 @@ class USCNavigator:
             checkin_limits = []
             for venue_uri in venue_uris:
                 venue_html = get_venue_html(f"{self.usc_url_base}{venue_uri}")
-                visit_limit_option1 = self._find_between("M-.*Mitglieder können ", "besuchen", venue_html)
-                visit_limit_option2 = self._find_between("M-.*Mitglieder können ", "teilnehmen", venue_html)
-                visit_limit_option3 = self._find_between("M-.*Mitglieder können ", "nutzen", venue_html)
-                visit_limit_option4 = self._find_between("M-.*Mitglieder können ", "bouldern", venue_html)
-                visit_limit_option5 = self._find_between("M-.*Mitglieder können ", "wahrnehmen", venue_html)
-                visit_limit_option6 = self._find_between("M-.*Mitglieder können ", "bouldern", venue_html)
-                visit_limit_option3 = self._find_between("M-.*Mitglieder können ", "spielen", venue_html)
-                visit_limit_raw = visit_limit_option1 or visit_limit_option2 or visit_limit_option3
-                if not visit_limit_raw:
-                    logger.warning(f"Could not find visit limit for {venue_uri=}")
-                    checkin_limit = 31
-                else:
-                    visit_limit_raw = visit_limit_raw[0].replace(" ", "").replace("(max.1xproTag)", "")
-                    checkin_limit = re.sub(r'\D', '', visit_limit_raw)
-                    checkin_limit = checkin_limit if checkin_limit != 1 else 31  # 1/day --> 31/month
+                checkin_limit = self.checkin_limit_from_raw_html(venue_html, venue_uri)
                 checkin_limits.append(checkin_limit)
 
-            for sport, venue, checkin_limit in tuple(zip(sports, venues, checkin_limits)):
-                logger.debug(f"{date:15s}{sport:25s}{venue}")
+            for sport, venue, checkin_limit, venue_uri in tuple(zip(sports, venues, checkin_limits, venue_uris)):
+                if venue == "urbanapes":  # basement and brightisde both get reported as "urbanapes", so just use URI
+                    venue = venue_uri.replace("/en/venues/urban-apes-", "")
+                logger.debug(f"{date:12s}{sport:28s}{venue:23s}{venue_uri}")
                 rows.append(
                     {
                         "day": date_obj.day,
@@ -159,6 +149,45 @@ class USCNavigator:
 
         self._log_check_ins(check_ins)
         return check_ins
+
+    @staticmethod
+    @lru_cache
+    def checkin_limit_from_raw_html(venue_html: str, venue_uri: str) -> int:
+        default = 31
+        venue_html = venue_html.replace("\n", "").replace(u'\xa0', u' ').replace("S-Mitglieder", "")
+        if venue_uri not in venue_html:
+            logger.info(f"{venue_uri=} no longer exists. Defaulting to {default}.")
+            return default
+
+        visit_limit_raw = USCNavigator.extract_visit_limit(venue_html)
+        if not visit_limit_raw:
+            logger.warning(f"Could not find visit limit for {venue_uri=}")
+            return default
+
+        visit_limit_raw = visit_limit_raw.replace(" ", "").replace("(max.1xproTag)", "")
+        checkin_limit = int(re.sub(r'\D', '', visit_limit_raw))
+        checkin_limit = checkin_limit if checkin_limit != 1 else 31  # 1/day --> 31/month
+        return checkin_limit
+
+    @staticmethod
+    def extract_visit_limit(venue_html: str) -> None | str:
+        visit_limit_options = [
+            USCNavigator._find_between("M-.*?Mitglieder können ", "besuchen", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "Besuch", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "teilnehmen", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "nutzen", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "bouldern", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "wahrnehmen", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "bouldern", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "spielen", venue_html),
+            USCNavigator._find_between("M-.*?Mitglieder können ", "Schwimmen", venue_html),
+        ]
+        # print(visit_limit_options)
+        visit_limit_options = map(lambda x: x[0], filter(None, visit_limit_options))
+        if not visit_limit_options:
+            return None
+        visit_limit_raw = str(min(visit_limit_options, key=len))
+        return visit_limit_raw
 
 
 def _add_year_to_check_ins_df(check_ins: pd.DataFrame) -> pd.DataFrame:
