@@ -33,7 +33,7 @@ def format_checkins_rows_for_message(
 
 def format_sports_for_msg(sports_this_month: pd.DataFrame) -> str:
     sports_this_month = sports_this_month.to_dict()["count"]
-    return "\n".join([f"{sport:25s}{count}" for sport, count in sports_this_month.items()]).replace(" ", "-")
+    return "\n".join([f"{sport:29s}{count}" for sport, count in sports_this_month.items()]).replace(" ", "-")
 
 
 def format_attendance_per_month_for_msg(year: int = None, month: int = None) -> str:

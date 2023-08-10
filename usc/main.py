@@ -25,7 +25,7 @@ def monthly_checkin_pipeline():
     msg = format_attendance_per_month_for_msg()
     logger.info(f"Elapsed time: {round(time() - t0, 2)}s")
     print(msg)
-    send_to_telegram(msg)
+    # send_to_telegram(msg)
 
 
 def total_checkin_pipeline():

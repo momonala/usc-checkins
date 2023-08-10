@@ -124,12 +124,16 @@ class USCNavigator:
             checkin_limits = []
             for venue_uri in venue_uris:
                 venue_html = get_venue_html(f"{self.usc_url_base}{venue_uri}")
-                visit_limit_raw = self._find_between("M-Mitglieder können ", " besuchen", venue_html)
+                visit_limit_option1 = self._find_between("M-.*Mitglieder können ", "besuchen", venue_html)
+                visit_limit_option2 = self._find_between("M-.*Mitglieder können ", "teilnehmen", venue_html)
+                visit_limit_raw = visit_limit_option1 or visit_limit_option2
                 if not visit_limit_raw:
+                    logger.warning(f"Could not find visit limit for {venue_uri=}")
                     checkin_limit = 31
                 else:
                     visit_limit_raw = visit_limit_raw[0].replace(" ", "").replace("(max.1xproTag)", "")
                     checkin_limit = re.sub(r'\D', '', visit_limit_raw)
+                    checkin_limit = checkin_limit if checkin_limit != 1 else 31  # 1/day --> 31/month
                 checkin_limits.append(checkin_limit)
 
             for sport, venue, checkin_limit in tuple(zip(sports, venues, checkin_limits)):
@@ -179,7 +183,7 @@ def _add_cost_to_check_ins_df(check_ins: pd.DataFrame) -> pd.DataFrame:
     """Add"""
     sport_costs = {
         'Bouldering': 12,
-        'Fitness': 15,
+        'Fitness': 5,
         'Bouldern': 12,
         'Schwimmen': 5.5,
         'Calisthenics|AllLevels': 12.5,
