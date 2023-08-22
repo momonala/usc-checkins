@@ -16,16 +16,19 @@ logger = logging.getLogger(__name__)
 
 def monthly_checkin_pipeline(pages=1):
     t0 = time()
-    with virtual_display_if_needed(), browser_session() as browser:
-        usc = USCNavigator(browser)
-        usc.login()
-        usc.get_check_ins(pages=pages)
-        checkins = usc.extract_check_ins()
-    write_checkins_to_db(checkins)
-    msg = format_attendance_per_month_for_msg()
-    logger.info(f"Elapsed time: {round(time() - t0, 2)}s")
-    print(msg)
-    send_to_telegram(msg)
+    try:
+        with virtual_display_if_needed(), browser_session() as browser:
+            usc = USCNavigator(browser)
+            usc.login()
+            usc.get_check_ins(pages=pages)
+            checkins = usc.extract_check_ins()
+        write_checkins_to_db(checkins)
+        msg = format_attendance_per_month_for_msg()
+        logger.info(f"Elapsed time: {round(time() - t0, 2)}s")
+        print(msg)
+        send_to_telegram(msg)
+    except Exception as e:
+        print(e)
 
 
 def total_checkin_pipeline():
