@@ -130,8 +130,8 @@ class USCNavigator:
                 checkin_limits.append(checkin_limit)
 
             for sport, venue, checkin_limit, venue_uri in tuple(zip(sports, venues, checkin_limits, venue_uris)):
-                if venue == "urbanapes":  # basement and brightisde both get reported as "urbanapes", so just use URI
-                    venue = venue_uri.replace("/en/venues/urban-apes-", "")
+                # if venue == "urbanapes":  # basement and brightisde both get reported as "urbanapes", so just use URI
+                #     venue = venue_uri.replace("/en/venues/urban-apes-", "")
                 logger.debug(f"{date:12s}{sport:28s}{venue:23s}{venue_uri}")
                 rows.append(
                     {
@@ -146,6 +146,7 @@ class USCNavigator:
         check_ins = pd.DataFrame(rows)
         check_ins = _add_year_to_check_ins_df(check_ins)
         check_ins = _add_cost_to_check_ins_df(check_ins)
+        print(check_ins)
 
         self._log_check_ins(check_ins)
         return check_ins
@@ -220,7 +221,7 @@ def _add_cost_to_check_ins_df(check_ins: pd.DataFrame) -> pd.DataFrame:
         'Fitness': 5,
         'Bouldern': 12,
         'Schwimmen': 5.5,
-        'Calisthenics|AllLevels': 12.5,
+        'Calisthenics|AllLevels': 20,
         'bouldern': 12,
         'BeachVolleyball': 10,
         'PowerYoga': 12.5,

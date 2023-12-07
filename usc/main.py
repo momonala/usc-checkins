@@ -25,10 +25,9 @@ def monthly_checkin_pipeline(pages=1):
         write_checkins_to_db(checkins)
         msg = format_attendance_per_month_for_msg()
         logger.info(f"Elapsed time: {round(time() - t0, 2)}s")
-        print(msg)
         send_to_telegram(msg)
     except Exception as e:
-        print(e)
+        logger.exception(e)
 
 
 def total_checkin_pipeline():
